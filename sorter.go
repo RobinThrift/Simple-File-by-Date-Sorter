@@ -19,9 +19,12 @@ func main() {
 
     fmt.Println("Simple image sorter started:")
 
-    var srcDir = flag.String("src", cwd, "Set the source directory from which to pull the images from.")
+    var srcDir = flag.String("src", cwd, "Set the source directory from which to pull the files from.")
+    var outDirP = flag.String("out", "sorted", "Set the directory where the files will be coppied to.")
 
     flag.Parse()
+
+    outDir := *outDirP
 
     var imgList, err = ioutil.ReadDir(*srcDir);
 
@@ -56,26 +59,26 @@ func main() {
 
 
     // now create the sorted dir
-    os.Mkdir(cwd + "/sorted", os.FileMode(0777))
+    os.Mkdir(cwd + "/" + outDir, os.FileMode(0777))
 
     copied := 0
     chnl := make(chan int, 1)
 
     for Y, monthMap := range fileMap {
-        var path = cwd + "/sorted/" + strconv.Itoa(Y)
+        var path = cwd + "/" + outDir + "/" + strconv.Itoa(Y)
 
         // fmt.Println("Sorting for " + strconv.Itoa(Y));
         os.Mkdir(path, os.FileMode(0777))
 
         for M, dayMap := range monthMap {
             // fmt.Println("Sorting for " + M  + " " + strconv.Itoa(Y));
-            path = cwd + "/sorted/" + strconv.Itoa(Y) + "/" + M
+            path = cwd + "/" + outDir + "/" + strconv.Itoa(Y) + "/" + M
 
             os.Mkdir(path, os.FileMode(0777))
 
             for D, files := range dayMap {
                 // fmt.Print(D);
-                path = cwd + "/sorted/" + strconv.Itoa(Y) + "/" + M + "/" + D
+                path = cwd + "/" + outDir + "/" + strconv.Itoa(Y) + "/" + M + "/" + D
 
                 os.Mkdir(path, os.FileMode(0777))
 
