@@ -16,6 +16,7 @@ func main() {
 
     cwd, _ := os.Getwd()
 
+
     fmt.Println("Simple image sorter started:")
 
     var srcDir = flag.String("src", cwd + "/DCIM", "Set the source directory from which to pull the images from.")
@@ -27,6 +28,8 @@ func main() {
     if err != nil {
         return
     }
+
+    numFiles := len(imgList)
 
     fileMap := make(map[int]map[string]map[string][]os.FileInfo)
 
@@ -55,6 +58,9 @@ func main() {
     // now create the sorted dir
     os.Mkdir(cwd + "/sorted", os.FileMode(0777))
 
+    copied := 0
+    chnl := make(chan int, 1)
+
     for Y, monthMap := range fileMap {
         var path = cwd + "/sorted/" + strconv.Itoa(Y)
 
@@ -62,33 +68,53 @@ func main() {
         os.Mkdir(path, os.FileMode(0777))
 
         for M, dayMap := range monthMap {
-            fmt.Println("Sorting for " + M  + " " + strconv.Itoa(Y));
+            // fmt.Println("Sorting for " + M  + " " + strconv.Itoa(Y));
             path = cwd + "/sorted/" + strconv.Itoa(Y) + "/" + M
 
             os.Mkdir(path, os.FileMode(0777))
 
             for D, files := range dayMap {
                 // fmt.Print(D);
-                path += "/" + D
+                path = cwd + "/sorted/" + strconv.Itoa(Y) + "/" + M + "/" + D
 
                 os.Mkdir(path, os.FileMode(0777))
 
                 for _, _f := range files {
-                    copyFileContents(*srcDir + "/" + _f.Name(), path + "/" + _f.Name(), _f.ModTime())
+                    go func(src string, dst string, date time.Time) {
+                        copyFileContents(src, dst, date)
+                        defer func() {chnl <- 1}()
+                    }(*srcDir + "/" + _f.Name(), path + "/" + _f.Name(), _f.ModTime())
                 }
             }
         }
     }
 
-    var input string
-    fmt.Scanln(&input)
+    fmt.Printf("\nCopying files\t %d/%d (%d%%)", 0, numFiles, int(0.0/numFiles * 100))
+
+    for {
+        select {
+            case <-chnl:
+                copied++
+                updateStatus(numFiles, copied)
+            default:
+        }
+
+        if copied == numFiles {
+            break;
+        }
+    }
+    
+    fmt.Println("")
 
 }
 
 
+func updateStatus(total int, num int) {
+    fmt.Printf("\r Copying files\t %d/%d (%d%%)", num, total, int(float64(num)/float64(total) * 100))
+}
+
 // src http://stackoverflow.com/questions/21060945/simple-way-to-copy-a-file-in-golang
 func copyFileContents(src string, dst string, date time.Time) (err error) {
-    // fmt.Println(src);
     in, err := os.Open(src)
     if err != nil { return err }
     defer in.Close()
