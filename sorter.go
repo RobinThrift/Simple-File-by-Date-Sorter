@@ -19,7 +19,7 @@ func main() {
 
     fmt.Println("Simple image sorter started:")
 
-    var srcDir = flag.String("src", cwd + "/DCIM", "Set the source directory from which to pull the images from.")
+    var srcDir = flag.String("src", cwd, "Set the source directory from which to pull the images from.")
 
     flag.Parse()
 
